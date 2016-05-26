@@ -1342,6 +1342,7 @@ public class Sketch {
    * @return null if compilation failed, main class name if not
    */
   public String preprocess(String buildPath) throws RunnerException {
+    System.out.println (buildPath);
     return preprocess(buildPath, new PdePreprocessor());
   }
 
@@ -1618,9 +1619,8 @@ public class Sketch {
    */
   public String build(String buildPath, boolean verbose)
     throws RunnerException {
-    
     // run the preprocessor
-    editor.status.progressUpdate(20);
+    if (editor != null) editor.status.progressUpdate(20);
     String primaryClassName = preprocess(buildPath);
     lastPrimaryClassName = primaryClassName;
 
@@ -1675,7 +1675,7 @@ public class Sketch {
 
   
   public void setCompilingProgress(int percent) {
-    editor.status.progressUpdate(percent);
+    if (editor != null) editor.status.progressUpdate(percent);
   }
 
   

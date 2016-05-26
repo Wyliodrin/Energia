@@ -142,7 +142,7 @@ public class Base {
 //      }
 //    }
 
-    /*
+    
     commandLine = false;
     if (args.length >= 2) {
       if (args[0].startsWith("--")) {
@@ -150,14 +150,16 @@ public class Base {
       }
     }
 
-    if (PApplet.javaVersion < 1.5f) {
-      //System.err.println("no way man");
-      Base.showError("Need to install Java 1.5",
-                     "This version of Processing requires    \n" +
-                     "Java 1.5 or later to run properly.\n" +
-                     "Please visit java.com to upgrade.", null);
-    }
-    */
+    // System.out.println ("Command line "+commandLine);
+
+    // if (PApplet.javaVersion < 1.5f) {
+    //   //System.err.println("no way man");
+    //   Base.showError("Need to install Java 1.5",
+    //                  "This version of Processing requires    \n" +
+    //                  "Java 1.5 or later to run properly.\n" +
+    //                  "Please visit java.com to upgrade.", null);
+    // }
+    
 
     initPlatform();
 
@@ -303,38 +305,66 @@ public class Base {
     loadHardware(getHardwareFolder());
     loadHardware(getSketchbookHardwareFolder());
 
-    // Check if there were previously opened sketches to be restored
-    boolean opened = restoreSketches();
+    // // Check if there were previously opened sketches to be restored
+    // boolean opened = restoreSketches();
 
-    // Check if any files were passed in on the command line
-    for (int i = 0; i < args.length; i++) {
-      String path = args[i];
-      // Fix a problem with systems that use a non-ASCII languages. Paths are
-      // being passed in with 8.3 syntax, which makes the sketch loader code
-      // unhappy, since the sketch folder naming doesn't match up correctly.
-      // http://dev.processing.org/bugs/show_bug.cgi?id=1089
-      if (isWindows()) {
-        try {
-          File file = new File(args[i]);
-          path = file.getCanonicalPath();
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
-      if (handleOpen(path) != null) {
-        opened = true;
-      }
+    // // Check if any files were passed in on the command line
+    // for (int i = 0; i < args.length; i++) {
+    //   String path = args[i];
+    //   // Fix a problem with systems that use a non-ASCII languages. Paths are
+    //   // being passed in with 8.3 syntax, which makes the sketch loader code
+    //   // unhappy, since the sketch folder naming doesn't match up correctly.
+    //   // http://dev.processing.org/bugs/show_bug.cgi?id=1089
+    //   if (isWindows()) {
+    //     try {
+    //       File file = new File(args[i]);
+    //       path = file.getCanonicalPath();
+    //     } catch (IOException e) {
+    //       e.printStackTrace();
+    //     }
+    //   }
+    //   if (handleOpen(path) != null) {
+    //     opened = true;
+    //   }
+    // }
+
+    // // Create a new empty window (will be replaced with any files to be opened)
+    // if (!opened) {
+    //   handleNew();
+    // }
+
+    // // check for updates
+    // if (Preferences.getBoolean("update.check")) {
+    //   new UpdateCheck(this);
+    // }
+
+    String sketchPath = args[0];
+    String targetname = args[1];
+    String boardname = args[2];
+    String resultPath = args[3];
+
+    // for (Target target : targetsTable.values()) {
+    //   for (String board : target.getBoards().keySet()) {
+    //     System.out.println (target.getName()+" : "+board);
+    //   }
+    // }
+
+    switchTarget (targetname, boardname);
+
+    Sketch.buildSettingChanged ();
+
+    try
+    {
+      System.out.println ("compiling");
+      Sketch sketch = new Sketch (null, sketchPath);
+      // sketch.prepare ();
+      sketch.build (resultPath, true);
+    }
+    catch (Exception e)
+    {
+      e.printStackTrace ();
     }
 
-    // Create a new empty window (will be replaced with any files to be opened)
-    if (!opened) {
-      handleNew();
-    }
-
-    // check for updates
-    if (Preferences.getBoolean("update.check")) {
-      new UpdateCheck(this);
-    }
   }
 
 
@@ -1090,6 +1120,31 @@ public class Base {
 	  }	  
   }
 
+  public static void switchTarget (String n, String board)
+  {
+              String o = Preferences.get("target");
+              if(!n.equals(o)) {
+                String targetLibDir = new String("");
+                if(n.equals("msp430")) 
+                  targetLibDir = "hardware/msp430/";
+                else if(n.equals("lm4f"))
+                  targetLibDir = "hardware/lm4f/";
+      else if(n.equals("c2000")) 
+                  targetLibDir = "hardware/c2000/";
+      else if(n.equals("cc3200")) 
+                  targetLibDir = "hardware/cc3200/";
+      else if(n.equals("msp432")) 
+                  targetLibDir = "hardware/msp432/";
+      else if(n.equals("cc3200emt")) 
+                  targetLibDir = "hardware/cc3200emt/";
+      else if(n.equals("cc2600emt")) 
+                  targetLibDir = "hardware/cc2600emt/";
+                librariesFolder = getContentFile(targetLibDir + "libraries");
+              }
+              Preferences.set("target", n);
+              Preferences.set("board", board);
+    }
+
   
   public void rebuildBoardsMenu(JMenu menu) {
     //System.out.println("rebuilding boards menu");
@@ -1104,23 +1159,23 @@ public class Base {
               String n = (String)getValue("target");
               String o = Preferences.get("target");
               if(!n.equals(o)) {
-            	  String targetLibDir = new String("");
-            	  if(n.equals("msp430")) 
-            		  targetLibDir = "hardware/msp430/";
-            	  else if(n.equals("lm4f"))
-            		  targetLibDir = "hardware/lm4f/";
-		  else if(n.equals("c2000")) 
-            		  targetLibDir = "hardware/c2000/";
-		  else if(n.equals("cc3200")) 
-            		  targetLibDir = "hardware/cc3200/";
-		  else if(n.equals("msp432")) 
-            		  targetLibDir = "hardware/msp432/";
-		  else if(n.equals("cc3200emt")) 
-            		  targetLibDir = "hardware/cc3200emt/";
-		  else if(n.equals("cc2600emt")) 
-            		  targetLibDir = "hardware/cc2600emt/";
-            	  librariesFolder = getContentFile(targetLibDir + "libraries");
-            	  onArchChanged();
+                String targetLibDir = new String("");
+                if(n.equals("msp430")) 
+                  targetLibDir = "hardware/msp430/";
+                else if(n.equals("lm4f"))
+                  targetLibDir = "hardware/lm4f/";
+      else if(n.equals("c2000")) 
+                  targetLibDir = "hardware/c2000/";
+      else if(n.equals("cc3200")) 
+                  targetLibDir = "hardware/cc3200/";
+      else if(n.equals("msp432")) 
+                  targetLibDir = "hardware/msp432/";
+      else if(n.equals("cc3200emt")) 
+                  targetLibDir = "hardware/cc3200emt/";
+      else if(n.equals("cc2600emt")) 
+                  targetLibDir = "hardware/cc2600emt/";
+                librariesFolder = getContentFile(targetLibDir + "libraries");
+                onArchChanged();
               }
               Preferences.set("target", (String) getValue("target"));
               Preferences.set("board", (String) getValue("board"));

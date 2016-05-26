@@ -294,7 +294,7 @@ public class Base {
 
     // If no path is set, get the default sketchbook folder for this platform
     if (sketchbookPath == null) {
-      File defaultFolder = getDefaultSketchbookFolder();
+      File defaultFolder = new File ('/tmp/sketch'); // getDefaultSketchbookFolder();
       Preferences.set("sketchbook.path", defaultFolder.getAbsolutePath());
       if (!defaultFolder.exists()) {
         defaultFolder.mkdirs();

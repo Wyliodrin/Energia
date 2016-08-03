@@ -294,7 +294,7 @@ public class Base {
 
     // If no path is set, get the default sketchbook folder for this platform
     if (sketchbookPath == null) {
-      File defaultFolder = new File ('/tmp/sketch'); // getDefaultSketchbookFolder();
+      File defaultFolder = new File ("/tmp/sketch"); // getDefaultSketchbookFolder();
       Preferences.set("sketchbook.path", defaultFolder.getAbsolutePath());
       if (!defaultFolder.exists()) {
         defaultFolder.mkdirs();
@@ -343,13 +343,15 @@ public class Base {
     String boardname = args[2];
     String resultPath = args[3];
 
-    // for (Target target : targetsTable.values()) {
-    //   for (String board : target.getBoards().keySet()) {
-    //     System.out.println (target.getName()+" : "+board);
-    //   }
-    // }
+     for (Target target : targetsTable.values()) {
+       for (String board : target.getBoards().keySet()) {
+         System.out.println (target.getName()+" : "+board);
+       }
+     }
 
     switchTarget (targetname, boardname);
+
+    loadLibraries ();
 
     Sketch.buildSettingChanged ();
 
@@ -358,7 +360,10 @@ public class Base {
       System.out.println ("compiling");
       Sketch sketch = new Sketch (null, sketchPath);
       // sketch.prepare ();
-      sketch.build (resultPath, true);
+      if (sketch.build (resultPath, false) == null)
+      {
+        System.exit (-1);
+      }
     }
     catch (Exception e)
     {
@@ -1416,6 +1421,114 @@ public class Base {
     return ifound;
   }
   
+  protected boolean addLibrariesToList(File folder) throws IOException {
+    if (!folder.isDirectory()) return false;
+
+    String list[] = folder.list(new FilenameFilter() {
+      public boolean accept(File dir, String name) {
+        // skip .DS_Store files, .svn folders, etc
+        if (name.charAt(0) == '.') return false;
+        if (name.startsWith("__disabled_")) return false;
+        if (name.equals("CVS")) return false;
+        return (new File(dir, name).isDirectory());
+      }
+    });
+    // if a bad folder or something like that, this might come back null
+    if (list == null) return false;
+
+    // alphabetize list, since it's not always alpha order
+    // replaced hella slow bubble sort with this feller for 0093
+    Arrays.sort(list, String.CASE_INSENSITIVE_ORDER);
+
+    boolean ifound = false;
+
+    for (String potentialName : list) {
+      File subfolder = new File(folder, potentialName);
+//      File libraryFolder = new File(subfolder, "library");
+//      File libraryJar = new File(libraryFolder, potentialName + ".jar");
+//      // If a .jar file of the same prefix as the folder exists
+//      // inside the 'library' subfolder of the sketch
+//      if (libraryJar.exists()) {
+        String sanityCheck = Sketch.sanitizeName(potentialName);
+        if (!sanityCheck.equals(potentialName)) {
+          String mess = I18n.format(
+            _("The library \"{0}\" cannot be used.\n" +
+              "Library names must contain only basic letters and numbers.\n" +
+              "(ASCII only and no spaces, and it cannot start with a number)"),
+      potentialName
+    );
+          Base.showMessage(_("Ignoring bad library name"), mess);
+          continue;
+        }
+
+        String libraryName = potentialName;
+//        // get the path for all .jar files in this code folder
+//        String libraryClassPath =
+//          Compiler.contentsToClassPath(libraryFolder);
+//        // grab all jars and classes from this folder,
+//        // and append them to the library classpath
+//        librariesClassPath +=
+//          File.pathSeparatorChar + libraryClassPath;
+//        // need to associate each import with a library folder
+//        String packages[] =
+//          Compiler.packageListFromClassPath(libraryClassPath);
+        libraries.add(subfolder);
+        String packages[] =
+          Compiler.headerListFromIncludePath(subfolder.getAbsolutePath());
+        for (String pkg : packages) {
+          importToLibraryTable.put(pkg, subfolder);
+        }
+
+        // JMenuItem item = new JMenuItem(libraryName);
+        // item.addActionListener(listener);
+        // item.setActionCommand(subfolder.getAbsolutePath());
+        // menu.add(item);
+        ifound = true;
+
+// XXX: DAM: should recurse here so that library folders can be nested
+//      } else {  // not a library, but is still a folder, so recurse
+//        JMenu submenu = new JMenu(libraryName);
+//        // needs to be separate var, otherwise would set ifound to false
+//        boolean found = addLibraries(submenu, subfolder);
+//        if (found) {
+//          menu.add(submenu);
+//          ifound = true;
+//        }
+//      }
+    }
+    return ifound;
+  }
+
+  public int loadLibraries() {
+    // reset the set of libraries
+    libraries = new HashSet<File>();
+
+    // reset the table mapping imports to libraries
+    importToLibraryTable = new HashMap<String, File>();
+
+    // Add from the "libraries" subfolder in the Processing directory
+    try {
+      addLibrariesToList(librariesFolder);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    // Add libraries found in the sketchbook folder
+    // int separatorIndex = importMenu.getItemCount();
+    try {
+      File sketchbookLibraries = getSketchbookLibrariesFolder();
+      boolean found = addLibrariesToList(sketchbookLibraries);
+      // if (found) {
+        /*JMenuItem contrib = new JMenuItem(_("Contributed"));
+        contrib.setEnabled(false);
+        importMenu.insert(contrib, separatorIndex);*/
+        // importMenu.insertSeparator(separatorIndex);
+      // }
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return 0;
+    // return separatorIndex;
+  }
   
   protected void loadHardware(File folder) {
     if (!folder.isDirectory()) return;

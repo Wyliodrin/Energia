@@ -1484,6 +1484,7 @@ public class Sketch {
     importedLibraries = new ArrayList<File>();
 
     for (String item : preprocessor.getExtraImports()) {
+	System.out.println ("item: "+item);
       File libFolder = (File) Base.importToLibraryTable.get(item);
 
       if (libFolder != null && !importedLibraries.contains(libFolder)) {

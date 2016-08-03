@@ -159,9 +159,9 @@
     <macrodef name="copylibs">
       <attribute name="todir"/>
         <sequential>
-          <copy todir="@{todir}">
+          <copy todir="@{todir}" verbose="true">
             <fileset dir="../libraries"
-              includes="**/Adafruit_TMP006/, **/OneWire/, **/CogLCD/, **/aJson,
+              includes="**/Adafruit_TMP006/, **/OneWire/, **/CogLCD/, **/aJson/,
                         **/PubNub/, **/Temboo/, **/MQTTClient, **/PubSubClient,
                         **/OPT3001/, **/M2XStreamClient/, **/OneMsTaskTimer/,
                         **/LCD_SharpBoosterPack_SPI/"
